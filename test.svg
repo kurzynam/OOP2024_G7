@@ -1,0 +1,10 @@
+<svg height="360" width="360" xmlns="http://www.w3.org/2000/svg">
+	
+	<polygon points="100,20 180,60 180,140 100,180 20,140 20,60 " style="fill:yellow;stroke:red;stroke-width:5.0;"/>
+
+	
+	<polygon points="300,197 12,209 48,322 " style="fill:purple;stroke:blue;stroke-width:5.0;"/>
+
+	
+	<polygon points="200,200 200,100 100,100 100,200 " style="fill:black;stroke:gray;stroke-width:5.0;"/>
+</svg>
