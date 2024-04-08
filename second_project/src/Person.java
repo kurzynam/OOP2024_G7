@@ -3,6 +3,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class Person {
 
@@ -88,5 +90,19 @@ public class Person {
             sb.append(", father=" + father.name );
         sb.append('}');
         return sb.toString();
+    }
+
+    public static String generateDiagram(List<Person> people){
+        String fileContent = "@startuml \n %s \n @enduml";
+        String fileBody = "";
+        Function<String, String> objectName = str -> str.replace(" ", "");
+        Function<String, String> objectLine = str -> String.format("object \"%s\" as %s", str, objectName.apply(str));
+        List<String> convertedPeople = people.stream().map(person -> person.name).map(objectLine).collect(Collectors.toList());
+        for (String p : convertedPeople ){
+            fileBody += p + "\n";
+        }
+
+
+        return String.format(fileContent,fileBody);
     }
 }
