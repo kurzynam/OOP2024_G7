@@ -1,17 +1,25 @@
 @startuml
-object "Andrzej Kowalski" as AndrzejKowalski
-object "Alicja Wiśniewska" as AlicjaWiśniewska
-object "Ewa Kowalska" as EwaKowalska
-object "Krystyna Dąbrowska" as KrystynaDąbrowska
-object "Anna Dąbrowska" as AnnaDąbrowska
 object "Marek Kowalski" as MarekKowalski
-object "Tomasz Dąbrowski" as TomaszDąbrowski #FFFF00
+object "Ewa Kowalska" as EwaKowalska
+object "Anna Dąbrowska" as AnnaDąbrowska
+object "Andrzej Kowalski" as AndrzejKowalski
+object "Krystyna Dąbrowska" as KrystynaDąbrowska
+object "Alicja Wiśniewska" as AlicjaWiśniewska
+object "Tomasz Dąbrowski" as TomaszDąbrowski
+object "Joanna Nowak" as JoannaNowak
+object "Kacper Kowalski" as KacperKowalski
+object "Elżbieta Kowalska" as ElżbietaKowalska
+object "Jan Kowalski" as JanKowalski
 AnnaDąbrowska <-- MarekKowalski
-KrystynaDąbrowska --> MarekKowalski
 AndrzejKowalski <-- MarekKowalski
-AlicjaWiśniewska <-- AnnaDąbrowska
-AndrzejKowalski <-- EwaKowalska
-TomaszDąbrowski <-- AnnaDąbrowska
+KrystynaDąbrowska <-- MarekKowalski
+JoannaNowak <-- AndrzejKowalski
+KacperKowalski <-- AndrzejKowalski
+ElżbietaKowalska <-- KacperKowalski
+JanKowalski <-- KacperKowalski
 AnnaDąbrowska <-- EwaKowalska
+AndrzejKowalski <-- EwaKowalska
 KrystynaDąbrowska <-- EwaKowalska
+AlicjaWiśniewska <-- AnnaDąbrowska
+TomaszDąbrowski <-- AnnaDąbrowska
 @enduml
