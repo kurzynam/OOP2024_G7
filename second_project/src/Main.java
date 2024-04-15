@@ -4,14 +4,14 @@ import java.util.function.Predicate;
 
 public class Main {
     public static void main(String[] args) {
-        List<Person> people = Person.fromCsvFile("family.csv");
-        String output = Person.generateDiagram(people);
-        System.out.println(output);
+        CusomList<String> newList = new CusomList<>();
+        newList.addLast("Hello");
+        System.out.println(newList.getLast());
+        newList.addLast("World");
+        System.out.println(newList.getLast());
+
 
 
     }
 
-    public static boolean startsWithB(String toCheck){
-        return toCheck.startsWith("B");
-    }
 }
