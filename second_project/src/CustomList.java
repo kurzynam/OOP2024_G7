@@ -25,6 +25,32 @@ public class CustomList<T> {
         }
         return head.value;
     }
+
+    public T removeLast(){
+        if (head == null){
+            return null;
+        }
+        Node<T> temp = head;
+        while(temp.next != tail){
+            temp = temp.next;
+        }
+        T retVal = tail.value;
+        tail = temp;
+        size--;
+        return retVal;
+    }
+
+    public T removeFirst(){
+        if (head == null){
+            return null;
+        }
+        T retValue = head.value;
+        Node<T> temp = head.next;
+        head = temp;
+        size--;
+        return retValue;
+
+    }
     public void addFirst(T value){
         Node<T> newNode = new Node<>(value);
         if (head == null){
@@ -32,6 +58,7 @@ public class CustomList<T> {
         }
         newNode.next = head;
         head = newNode;
+        size++;
     }
     public Node<T> getTail() {
         return tail;
