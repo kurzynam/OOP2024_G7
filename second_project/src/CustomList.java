@@ -1,4 +1,4 @@
-public class CusomList<T> {
+public class CustomList<T> {
 
     private Node<T> head;
     private Node<T> tail;
