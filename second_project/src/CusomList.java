@@ -19,7 +19,7 @@ public class CusomList<T> {
         }
         return tail.value;
     }
-    public T geFirst(){
+    public T getFirst(){
         if (head == null){
             return null;
         }
