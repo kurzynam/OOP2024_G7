@@ -1,5 +1,3 @@
-import com.sun.deploy.util.StringUtils;
-
 import java.io.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -9,7 +7,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class Person implements Serializable{
-    private String name;
+    private String fullName;
     private LocalDate birthDate;
     private LocalDate deathDate;
 
@@ -17,16 +15,16 @@ public class Person implements Serializable{
     private Person father;
 
     public Person(String fullName, LocalDate birthDate, LocalDate deathDate) {
-        this.name = fullName;
+        this.fullName = fullName;
         this.birthDate = birthDate;
         this.deathDate = deathDate;
     }
     public Person(String fullName) {
-        this.name = fullName;
+        this.fullName = fullName;
     }
 
     public Person(String fullName, LocalDate birthDate, LocalDate deathDate, Person mother, Person father) {
-        this.name = fullName;
+        this.fullName = fullName;
         this.birthDate = birthDate;
         this.deathDate = deathDate;
         this.mother = mother;
@@ -34,30 +32,19 @@ public class Person implements Serializable{
     }
 
 
-    public  String generateTree() {
-        String result = "@startuml\n%s\n%s@enduml";
-        Function<Person, String> objectName = person -> person.getName().replaceAll(" ", "");
-        Function<Person, String> objectLine = person -> String.format("object \"%s\" as %s", person.getName(), objectName.apply(person));
-        StringBuilder objects = new StringBuilder();
-        StringBuilder relations = new StringBuilder();
 
-
-        objects.append(objectLine.apply(this)).append("\n");
-        if (father != null){
-            objects.append(objectLine.apply(father)).append("\n");
-            relations.append(String.format("%s <-- %s\n", objectName.apply(father), objectName.apply(this)));
-        }
-        if (mother != null){
-            objects.append(objectLine.apply(mother)).append("\n");
-            relations.append(String.format("%s <-- %s\n", objectName.apply(mother), objectName.apply(this)));
-        }
-
-
-        return String.format(result, objects, relations);
+    public int getLifeLength(){
+        if (isAlive())
+            return LocalDate.now().getYear() - getBirthDate().getYear();
+        return getDeathDate().getYear() - getBirthDate().getYear();
     }
 
-
-
+    public static List<Person> getDeadPeople(List<Person> people){
+        return people.stream()
+                .filter(person -> !person.isAlive())
+                .sorted(Comparator.comparing(person -> person.getLifeLength()))
+                .collect(Collectors.toList());
+    }
 
     public static Person getOldestLivingPerson(List<Person> people){
         return people.stream()
@@ -65,69 +52,41 @@ public class Person implements Serializable{
                 .min(Comparator.comparing(p -> p.getBirthDate()))
                 .orElse(null);
     }
+    public static String generateDiagram(List<Person> people, Predicate<Person> condition, Function<String, String> postProcess) {
+        String result = "@startuml\n%s\n%s\n@enduml";
+        Function<String, String> objectName = str -> str.replaceAll("\\s+", "");
+        Function<String, String> objectLine = str -> String.format("object \"%s\" as %s",str, objectName.apply(str));
+        Function<String, String> objectLineAndPostprocess = objectLine.andThen(postProcess);
 
-    public static String generateDiagram(List<Person> people) {
-        String fileContent = "@startuml\n%s\n@enduml";
-        String fileBody = "";
-        Function<String, String> objectName = str -> str.replace(" ", "");
-        Function<String, String> objectLine = str -> String.format("object \"%s\" as %s\n", str, objectName.apply(str));
-        List<String> convertedPeople = people.stream().map(person -> person.name).map(objectLine).collect(Collectors.toList());
-        for(String str : convertedPeople) {
-            fileBody += str;
-        }
+        Map<Boolean, List<Person>> groupedPeople = people.stream()
+                .collect(Collectors.partitioningBy(condition));
 
-        Function<Person, String> fatherRelation = person -> String.format("%s <-- %s\n", objectName.apply(person.name), objectName.apply(person.father.name));
-        Function<Person, String> motherRelation = person -> String.format("%s <-- %s\n", objectName.apply(person.name), objectName.apply(person.mother.name));
-        Predicate<Person> hasFather = person -> person.father != null;
-        Predicate<Person> hasMother = person -> person.mother != null;
+        Set<String> objects = groupedPeople.get(true).stream()
+                .map(person -> person.getFullName())
+                .map(objectLineAndPostprocess)
+                .collect(Collectors.toSet());
+        objects.addAll(groupedPeople.get(false).stream()
+                .map(person -> person.getFullName())
+                .map(objectLine)
+                .collect(Collectors.toSet())
+        );
 
-        List<String> relationsList = people.stream().filter(hasFather).map(fatherRelation).collect(Collectors.toList());
-        for(String str : relationsList) {
-            fileBody += str;
-        }
+        Set<String> fathers = people.stream()
+                .filter(p -> p.getFather() != null)
+                .map(p -> String.format("%s <-- %s", p.getFullName(), p.getFather().getFullName()))
+                .collect(Collectors.toSet());
 
-        relationsList = people.stream().filter(hasMother).map(motherRelation).collect(Collectors.toList());
-        for(String str : relationsList) {
-            fileBody += str;
-        }
+        Set<String> mothers = people.stream()
+                .filter(p -> p.getMother() != null)
+                .map(p -> String.format("%s <-- %s", p.getFullName(), p.getMother().getFullName()))
+                .collect(Collectors.toSet());
 
-        return String.format(fileContent, fileBody);
+        String objectString = String.join("\n", objects);
+        String relationString = String.join("\n", fathers)
+                + String.join("\n", mothers) ;
+
+        return String.format(result, objectString, relationString);
     }
-//    public static String generateDiagram(List<Person> people, Predicate<Person> condition, Function<String, String> postProcess) {
-//        String result = "@startuml\n%s\n%s\n@enduml";
-//        Function<String, String> objectName = str -> str.replaceAll("\\s+", "");
-//        Function<String, String> objectLine = str -> String.format("object \"%s\" as %s",str, objectName.apply(str));
-//        Function<String, String> objectLineAndPostprocess = objectLine.andThen(postProcess);
-//
-//        Map<Boolean, List<Person>> groupedPeople = people.stream()
-//                .collect(Collectors.partitioningBy(condition));
-//
-//        Set<String> objects = groupedPeople.get(true).stream()
-//                .map(person -> person.getFullName())
-//                .map(objectLineAndPostprocess)
-//                .collect(Collectors.toSet());
-//        objects.addAll(groupedPeople.get(false).stream()
-//                .map(person -> person.getFullName())
-//                .map(objectLine)
-//                .collect(Collectors.toSet())
-//        );
-//
-//        Set<String> fathers = people.stream()
-//                .filter(p -> p.getFather() != null)
-//                .map(p -> String.format("%s <-- %s", p.getFullName(), p.getFather().getFullName()))
-//                .collect(Collectors.toSet());
-//
-//        Set<String> mothers = people.stream()
-//                .filter(p -> p.getMother() != null)
-//                .map(p -> String.format("%s <-- %s", p.getFullName(), p.getMother().getFullName()))
-//                .collect(Collectors.toSet());
-//
-//        String objectString = String.join("\n", objects);
-//        String relationString = String.join("\n", fathers)
-//                + String.join("\n", mothers) ;
-//
-//        return String.format(result, objectString, relationString);
-//    }
 
 
 
@@ -165,30 +124,25 @@ public class Person implements Serializable{
             }
             if (numOfColumns > 3) {
                 String motherFullName = parts[3].trim();
-                if (!motherFullName.isEmpty()) {
-                    mother = find(motherFullName, people);
-                    if (mother == null) {
-                        mother = new Person(motherFullName);
-                    }
-                    mother = verifyParent(mother, birthDate, motherFullName, fullName);
+                mother = find(motherFullName, people);
+                if (mother == null && !motherFullName.isEmpty()){
+                    mother = new Person(fullName);
                 }
+                mother = verifyParent(mother, birthDate, motherFullName, fullName);
             }
             if (numOfColumns > 4){
                 String fatherFullName = parts[4].trim();
-                if (!fatherFullName.isEmpty()){
-                    father = find(fatherFullName, people);
-                    if (father == null){
-                        father = new Person(fatherFullName);
-                    }
-                    father = verifyParent(father, birthDate, fatherFullName, fullName);
+                father = find(fatherFullName, people);
+                if (father == null && !fatherFullName.isEmpty()){
+                    father = new Person(fullName);
                 }
-
+                father = verifyParent(father, birthDate, fatherFullName, fullName);
             }
             if (deathDate != null && deathDate.isBefore(birthDate))
                 throw new NegativeLifespanException(fullName);
             Person personToAdd = find(fullName, people);
             if (isPersonOnTheList(personToAdd, people))
-                throw new AmbigiousPersonException(personToAdd.getName());
+                throw new AmbigiousPersonException(personToAdd.getFullName());
             if (personToAdd == null){
                 personToAdd = new Person(fullName, birthDate, deathDate, mother, father);
             }else {
@@ -203,29 +157,10 @@ public class Person implements Serializable{
         }
     }
 
-
-    public int getLifeLength(){
-        if (deathDate == null){
-            return LocalDate.now().getYear() - birthDate.getYear();
-        }
-        return deathDate.getYear() - birthDate.getYear();
-    }
-    public static List<Person> getPeopleMatchingPattern(List<Person> people, String pattern){
-        return people.stream().filter(person -> person.name.contains(pattern)).collect(Collectors.toList());
-    }
-
-    public static List<Person> getDeadPeople(List<Person> people){
-        return people.stream().filter(p -> p.deathDate != null).sorted(Comparator.comparing(person -> person.getLifeLength())).collect(Collectors.toList());
-    }
-
-
-
-
     private static Person verifyParent(Person parent, LocalDate birthDate, String parentFullName, String fullName) throws IOException {
         try {
-            if((!parent.isAlive() && parent.getDeathDate().isBefore(birthDate)) || parent.getAge() < 15) {
-                throw new ParentingAgeException(parent.getName());
-            }
+            if(parent.getDeathDate().isBefore(birthDate) || parent.getAge() < 15)
+                throw  new ParentingAgeException(parent.getFullName());
         }catch (ParentingAgeException e){
             System.out.println(e.getMessage());
             System.out.println(String.format("Czy potwierdzasz, że %s jest rodzicem %s (T/N)?", parentFullName, fullName));
@@ -237,8 +172,8 @@ public class Person implements Serializable{
         return parent;
     }
 
-    public String getName() {
-        return name;
+    public String getFullName() {
+        return fullName;
     }
     public LocalDate getBirthDate() {
         return birthDate;
@@ -259,9 +194,6 @@ public class Person implements Serializable{
     }
 
     public int getAge() {
-        if (birthDate == null){
-            return -1;
-        }
         if (isAlive()){
             LocalDate currentDate = LocalDate.now();
             return currentDate.minusYears(birthDate.getYear()).getYear();
@@ -273,25 +205,21 @@ public class Person implements Serializable{
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Imię i nazwisko: " + getName() + "\n");
-
-        if(getBirthDate() != null){
-            sb.append("Data urodzenia: " + getBirthDate() + "\n");
-            sb.append("Wiek: " + getAge() + "\n" );
-        }
-        if(getDeathDate() != null) {
+        sb.append("Imię i nazwisko: " + getFullName() + "\n")
+                .append("Data urodzenia: " + getBirthDate() + "\n");
+        if(getDeathDate() != null)
             sb.append("Data śmierci: " + getDeathDate() + "\n");
-        }
-        sb.append("Czy żyje: " + (isAlive() ? "tak" : "nie") + "\n");
+        sb.append("Wiek: " + getAge() + "\n" )
+                .append("Czy żyje: " + (isAlive() ? "tak" : "nie") + "\n");
         return sb.toString();
     }
 
     public boolean equals(Person other){
-        if (other == null || (getName() != null && other.getName() == null))
+        if (other == null || (getFullName() != null && other.getFullName() == null))
             return false;
-        else if(getName() == null && other.getName() != null)
+        else if(getFullName() == null && other.getFullName() != null)
             return false;
-        return getName().equals(other.getName());
+        return getFullName().equals(other.getFullName());
     }
     public static boolean isPersonOnTheList(Person person, List<Person> people){
         if (person == null)
@@ -307,11 +235,11 @@ public class Person implements Serializable{
         if (fullname == null || fullname.isEmpty())
             return null;
         for(Person p : people){
-            if(fullname.equals(p.getName()))
+            if(fullname.equals(p.getFullName()))
                 return p;
-            if(p.getMother() != null && fullname.equals(p.getMother().getName()))
+            if(p.getMother() != null && fullname.equals(p.getMother().getFullName()))
                 return p.getMother();
-            if(p.getFather() != null && fullname.equals(p.getFather().getName()))
+            if(p.getFather() != null && fullname.equals(p.getFather().getFullName()))
                 return p.getFather();
         }
         return null;
