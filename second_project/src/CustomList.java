@@ -1,114 +1,39 @@
-import java.util.AbstractList;
-import java.util.Iterator;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class CustomList<T> extends AbstractList<T> {
-
     private Node<T> head;
     private Node<T> tail;
-
     private int size = 0;
 
-    public Node<T> getHead() {
-        return head;
-    }
+    private static class Node<T> {
+        T value;
+        Node<T> next;
 
-    public T getLast(){
-        if (tail == null){
-            return null;
+        Node(T value) {
+            this.value = value;
+            this.next = null;
         }
-        return tail.value;
-    }
-    public T getFirst(){
-        if (head == null){
-            return null;
-        }
-        return head.value;
     }
 
-    public T removeLast(){
-        if (head == null){
-            return null;
-        }
-        Node<T> temp = head;
-        while(temp.next != tail){
-            temp = temp.next;
-        }
-        T retVal = tail.value;
-        tail = temp;
-        size--;
-        return retVal;
-    }
-
-    public T removeFirst(){
-        if (head == null){
-            return null;
-        }
-        T retValue = head.value;
-        Node<T> temp = head.next;
-        head = temp;
-        size--;
-        return retValue;
-
-    }
-    public void addFirst(T value){
-        Node<T> newNode = new Node<>(value);
-        if (head == null){
-            tail = newNode;
-        }
-        newNode.next = head;
-        head = newNode;
-        size++;
-    }
-    public Node<T> getTail() {
-        return tail;
-    }
-
-
-    public void addLast(T value){
-        Node<T> newNode = new Node<T>(value);
-
-        if (head == null){
-            head = newNode;
-        }else {
-            tail.next = newNode;
-        }
-        tail = newNode;
-        size++;
-    }
-
-
-    public Iterator<T> iterator(){
-        return new Iterator<T>() {
-            Node<T> current = head;
-            @Override
-            public boolean hasNext() {
-                return current.next != null;
-            }
-
-            @Override
-            public T next() {
-                if (head == null){
-                    return null;
-                }
-                T retVal = current.value;
-                current = current.next;
-                return retVal;
-            }
-        };
+    @Override
+    public boolean add(T t) {
+        addLast(t);
+        return true;
     }
 
     @Override
     public T get(int index) {
-        if (index >= 0 && index < size){
-            Node<T> temp = head;
-            for (int i = 0 ; i < index; i++){
-                temp = temp.next;
-            }
-            return temp.value;
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
         }
-        else {
-            return null;
+        Node<T> current = head;
+        for (int i = 0; i < index; i++) {
+            current = current.next;
         }
+        return current.value;
     }
 
     @Override
@@ -116,14 +41,119 @@ public class CustomList<T> extends AbstractList<T> {
         return size;
     }
 
-
-    public static class Node<T>{
-        T value;
-        Node<T> next;
-
-        Node (T value){
-            this.value = value;
-            this.next = null;
+    public void addLast(T value) {
+        Node<T> newNode = new Node<>(value);
+        if (head == null) {
+            head = tail = newNode;
+        } else {
+            tail.next = newNode;
+            tail = newNode;
         }
+        size++;
+    }
+
+    public T getLast() {
+        if (tail == null) {
+            return null;
+        }
+        return tail.value;
+    }
+
+    public void addFirst(T value) {
+        Node<T> newNode = new Node<>(value);
+        if (head == null) {
+            head = tail = newNode;
+        } else {
+            newNode.next = head;
+            head = newNode;
+        }
+        size++;
+    }
+
+    public T getFirst() {
+        if (head == null) {
+            return null;
+        }
+        return head.value;
+    }
+
+    public T removeFirst() {
+        if (head == null) {
+            return null;
+        }
+        T value = head.value;
+        head = head.next;
+        if (head == null) {
+            tail = null;
+        }
+        size--;
+        return value;
+    }
+
+    public T removeLast() {
+        if (tail == null) {
+            return null;
+        }
+        if (head == tail) {
+            T value = head.value;
+            head = tail = null;
+            size--;
+            return value;
+        }
+        Node<T> current = head;
+        while (current.next != tail) {
+            current = current.next;
+        }
+        T value = tail.value;
+        tail = current;
+        tail.next = null;
+        size--;
+        return value;
+    }
+
+    @Override
+    public T set(int index, T element) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public T remove(int index) {
+        throw new UnsupportedOperationException();
+    }
+
+
+    @Override
+    public Iterator<T> iterator() {
+        return new Iterator<T>() {
+            private Node<T> current = head;
+
+            @Override
+            public boolean hasNext() {
+                return current != null;
+            }
+
+            @Override
+            public T next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                T value = current.value;
+                current = current.next;
+                return value;
+            }
+        };
+    }
+
+    @Override
+    public Stream<T> stream() {
+        Spliterator<T> spliterator = Spliterators.spliterator(iterator(), size(), 0);
+        return StreamSupport.stream(spliterator, false);
+    }
+
+    public static <T> List<T> filterByClass(List<?> list, Class<T> clazz) {
+        return list.stream()
+                .filter(clazz::isInstance)
+                .map(clazz::cast)
+                .collect(Collectors.toList());
     }
 }
